@@ -22,18 +22,28 @@
 
   # Use https://search.nixos.org/packages to find packages
   packages = [
+    pkgs.nodejs_20
     pkgs.python311
   ];
 
   # Sets environment variables in the workspace
   env = {};
   idx = {
+    extensions = [
+      "dbaeumer.vscode-eslint"
+      "esbenp.prettier-vscode"
+      "ms-vscode.live-server"
+    ];
+
     workspace = {
       onCreate = {
         default.openFiles = [
           "README.md"
           "index.html"
         ];
+      };
+      onStart = {
+        install-deps = "npm install --if-present";
       };
     };
     

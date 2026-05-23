@@ -48,9 +48,10 @@ jobs:
       id: npm_scripts
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: |
-        echo "has_lint=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.lint))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
-        echo "has_build=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.build))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
-        echo "has_test=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.test))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
+        for script in lint build test; do
+          value=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s['$script']))); } catch { process.stdout.write('false'); }")
+          echo "has_${script}=${value}" >> "$GITHUB_OUTPUT"
+        done
     - name: Install dependencies (lockfile)
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: npm ci

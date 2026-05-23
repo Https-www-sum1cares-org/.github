@@ -48,32 +48,18 @@ jobs:
       id: npm_scripts
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: |
-        node <<'EOF'
-        const fs = require('fs');
-        let scripts = {};
-
-        try {
-          scripts = require('./package.json').scripts || {};
-        } catch (error) {
-          console.log('Failed to parse package.json scripts:', error.message);
-        }
-
-        fs.appendFileSync(
-          process.env.GITHUB_OUTPUT,
-          `has_lint=${Boolean(scripts.lint)}\n` +
-          `has_build=${Boolean(scripts.build)}\n` +
-          `has_test=${Boolean(scripts.test)}\n`,
-        );
-        EOF
+        echo "has_lint=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.lint))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
+        echo "has_build=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.build))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
+        echo "has_test=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s.test))); } catch { process.stdout.write('false'); }")" >> "$GITHUB_OUTPUT"
     - name: Install dependencies (lockfile)
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: npm ci
     - name: Lint
-      if: steps.npm_scripts.outputs.has_lint == 'true'
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_lint == 'true'
       run: npm run lint
     - name: Build
-      if: steps.npm_scripts.outputs.has_build == 'true'
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_build == 'true'
       run: npm run build
     - name: Test
-      if: steps.npm_scripts.outputs.has_test == 'true'
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_test == 'true'
       run: npm test

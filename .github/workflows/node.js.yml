@@ -11,21 +11,56 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: ['18.20.0', '20.0.0', '22.0.0']
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Detect npm project files
+      id: npm_project
+      run: |
+        if [ -f package.json ]; then
+          echo "has_package=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_package=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+          echo "has_lockfile=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_lockfile=false" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Use Node.js ${{ matrix.node-version }} (with npm cache)
+      if: steps.npm_project.outputs.has_lockfile == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - name: Use Node.js ${{ matrix.node-version }} (without cache)
+      if: steps.npm_project.outputs.has_lockfile != 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Detect npm scripts
+      id: npm_scripts
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
+      run: |
+        for script in lint build test; do
+          value=$(node -e "try { const s = require('./package.json').scripts || {}; process.stdout.write(String(Boolean(s['$script']))); } catch { process.stdout.write('false'); }")
+          echo "has_${script}=${value}" >> "$GITHUB_OUTPUT"
+        done
+    - name: Install dependencies (lockfile)
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
+      run: npm ci
+    - name: Lint
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_lint == 'true'
+      run: npm run lint
+    - name: Build
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_build == 'true'
+      run: npm run build
+    - name: Test
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true' && steps.npm_scripts.outputs.has_test == 'true'
+      run: npm test

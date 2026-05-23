@@ -58,4 +58,4 @@ jobs:
       run: npm run build --if-present
     - name: Test
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
-      run: npm run test --if-present
+      run: npm test --if-present

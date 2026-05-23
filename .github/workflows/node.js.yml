@@ -50,7 +50,7 @@ jobs:
     - name: Lint
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: |
-        if grep -q '"lint"' package.json; then
+        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.lint ? 0 : 1)"; then
           npm run lint
         else
           echo "No lint script found; skipping."
@@ -58,7 +58,7 @@ jobs:
     - name: Build
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: |
-        if grep -q '"build"' package.json; then
+        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)"; then
           npm run build
         else
           echo "No build script found; skipping."
@@ -66,7 +66,7 @@ jobs:
     - name: Test
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: |
-        if grep -q '"test"' package.json; then
+        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
           npm test
         else
           echo "No test script found; skipping."

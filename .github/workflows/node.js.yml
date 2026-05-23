@@ -44,30 +44,20 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Detect npm scripts
+      id: npm_scripts
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
+      run: |
+        node -e "const p=require('./package.json'); const s=p.scripts||{}; const fs=require('fs'); fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_lint=${!!s.lint}\nhas_build=${!!s.build}\nhas_test=${!!s.test}\n`);"
     - name: Install dependencies (lockfile)
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: npm ci
     - name: Lint
-      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
-      run: |
-        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.lint ? 0 : 1)"; then
-          npm run lint
-        else
-          echo "No lint script found; skipping."
-        fi
+      if: steps.npm_scripts.outputs.has_lint == 'true'
+      run: npm run lint
     - name: Build
-      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
-      run: |
-        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.build ? 0 : 1)"; then
-          npm run build
-        else
-          echo "No build script found; skipping."
-        fi
+      if: steps.npm_scripts.outputs.has_build == 'true'
+      run: npm run build
     - name: Test
-      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
-      run: |
-        if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
-          npm test
-        else
-          echo "No test script found; skipping."
-        fi
+      if: steps.npm_scripts.outputs.has_test == 'true'
+      run: npm test

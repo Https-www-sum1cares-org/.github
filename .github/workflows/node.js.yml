@@ -33,11 +33,17 @@ jobs:
         else
           echo "has_lockfile=false" >> "$GITHUB_OUTPUT"
         fi
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js ${{ matrix.node-version }} (with npm cache)
+      if: steps.npm_project.outputs.has_lockfile == 'true'
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+    - name: Use Node.js ${{ matrix.node-version }} (without cache)
+      if: steps.npm_project.outputs.has_lockfile != 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
     - name: Install dependencies (lockfile)
       if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
       run: npm ci

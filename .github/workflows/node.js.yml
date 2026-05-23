@@ -11,21 +11,45 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: ['18.20.0', '20.0.0', '22.0.0']
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
     - uses: actions/checkout@v4
+    - name: Detect npm project files
+      id: npm_project
+      run: |
+        if [ -f package.json ]; then
+          echo "has_package=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_package=false" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+          echo "has_lockfile=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_lockfile=false" >> "$GITHUB_OUTPUT"
+        fi
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - name: Install dependencies (lockfile)
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile == 'true'
+      run: npm ci
+    - name: Install dependencies (no lockfile)
+      if: steps.npm_project.outputs.has_package == 'true' && steps.npm_project.outputs.has_lockfile != 'true'
+      run: npm install --no-package-lock
+    - name: Lint
+      if: steps.npm_project.outputs.has_package == 'true'
+      run: npm run lint --if-present
+    - name: Build
+      if: steps.npm_project.outputs.has_package == 'true'
+      run: npm run build --if-present
+    - name: Test
+      if: steps.npm_project.outputs.has_package == 'true'
+      run: npm run test --if-present

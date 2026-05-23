@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   pre:
-    name: "Setup Repository"
+    name: "Precondition Check"
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.pre.outputs.skip }}
@@ -20,7 +20,9 @@ jobs:
       - name: "Precondition Check"
         id: pre
         run: |
-          if ! ls draft-* rfc* 2>/dev/null | grep -qv draft-todo-yourname-protocol.md; then
+          shopt -s nullglob
+          candidates=(draft-* rfc*)
+          if [ ${#candidates[@]} -eq 0 ] || ! printf '%s\n' "${candidates[@]}" | grep -qv '^draft-todo-yourname-protocol\.md$'; then
             {
               echo "------------------------------------------------------------"
               echo "Skipping setup for the first commit."
@@ -115,4 +117,4 @@ jobs:
 
       - name: "Push Changes"
         run: |
-          git push
+          git push || { echo "Push failed" >&2; exit 1; }

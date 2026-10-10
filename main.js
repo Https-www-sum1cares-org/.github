@@ -85,10 +85,16 @@ let paymentsClient = null;
  * @return {google.payments.api.PaymentsClient} Google Payments Client instance.
  */
 function getGooglePaymentsClient() {
+  // Ensure the Google Pay SDK is loaded before we try to construct the client.
+  if (!window.google || !window.google.payments || !window.google.payments.api) {
+    console.error('Google Pay SDK is not available. Make sure pay.js has loaded successfully.');
+    return null;
+  }
+
   // Check if the paymentsClient has already been initialized.
   if (paymentsClient === null) {
     // If not, create a new instance of the Google Payments Client.
-    paymentsClient = new google.payments.api.PaymentsClient({
+    paymentsClient = new window.google.payments.api.PaymentsClient({
       // Set the environment for the client ('TEST' or 'PRODUCTION').
       // `TEST` is default.
       environment: 'TEST',
@@ -153,13 +159,19 @@ function renderGooglePayButton() {
  * @returns {void}
  */
 function onGooglePayLoaded() {
+  const client = getGooglePaymentsClient();
+  if (!client) {
+    console.error('Cannot initialize Google Pay because the SDK is unavailable.');
+    return;
+  }
+
   // Create a deep copy of the base Google Pay request object.
   // This ensures that any modifications made to the request object
   // do not affect the original base request.
   const req = deepCopy(baseGooglePayRequest);
 
   // Get an instance of the Google Payments Client.
-  getGooglePaymentsClient()
+  client
     // Check if the user is ready to pay with Google Pay.
     .isReadyToPay(req)
     // Handle the response from the isReadyToPay() method.
@@ -187,6 +199,12 @@ function onGooglePayLoaded() {
  * @returns {void}
  */
 function onGooglePaymentButtonClicked() {
+  const client = getGooglePaymentsClient();
+  if (!client) {
+    console.error('Cannot process payment because the Google Pay client is unavailable.');
+    return;
+  }
+
   // Create a new request data object for this request
   const req = {
     ...deepCopy(baseGooglePayRequest),
@@ -202,7 +220,7 @@ function onGooglePaymentButtonClicked() {
   console.log('onGooglePaymentButtonClicked', req);
 
   // Get an instance of the Google Payments Client.
-  getGooglePaymentsClient()
+  client
     // Load the payment data in console for the transaction.
     .loadPaymentData(req)
     // If the payment is successful, process the payment
@@ -213,7 +231,8 @@ function onGooglePaymentButtonClicked() {
       // @note DO NOT save the payment credentials for future transactions,
       // unless they're used for merchant-initiated transactions with user
       // consent in place.
-      paymentToken = res.paymentMethodData.tokenizationData.token;
+      const paymentToken = res.paymentMethodData.tokenizationData.token;
+      console.log('Payment token created:', paymentToken);
     })
     // If there is an error, log it to the console.
     .catch(console.error);

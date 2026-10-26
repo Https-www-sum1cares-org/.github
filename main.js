@@ -207,13 +207,10 @@ function onGooglePaymentButtonClicked() {
     .loadPaymentData(req)
     // If the payment is successful, process the payment
     .then(function (res) {
-      // show returned data for debugging
-      console.log(res);
-      // @todo pass payment token to your gateway to process payment
+      // @todo pass the payment token to your gateway through a secure server-side flow
       // @note DO NOT save the payment credentials for future transactions,
       // unless they're used for merchant-initiated transactions with user
       // consent in place.
-      paymentToken = res.paymentMethodData.tokenizationData.token;
     })
     // If there is an error, log it to the console.
     .catch(console.error);

@@ -194,7 +194,7 @@ function onGooglePaymentButtonClicked() {
       countryCode: 'US',
       currencyCode: 'USD',
       totalPriceStatus: 'FINAL',
-      totalPrice: (Math.random() * 999 + 1).toFixed(2),
+      totalPrice: '1.00',
     },
   };
 
@@ -203,17 +203,12 @@ function onGooglePaymentButtonClicked() {
 
   // Get an instance of the Google Payments Client.
   getGooglePaymentsClient()
-    // Load the payment data in console for the transaction.
+    // Load the payment data for the transaction.
     .loadPaymentData(req)
-    // If the payment is successful, process the payment
-    .then(function (res) {
-      // show returned data for debugging
-      console.log(res);
-      // @todo pass payment token to your gateway to process payment
-      // @note DO NOT save the payment credentials for future transactions,
-      // unless they're used for merchant-initiated transactions with user
-      // consent in place.
-      paymentToken = res.paymentMethodData.tokenizationData.token;
+    .then(function (paymentData) {
+      // TODO: Send paymentData.paymentMethodData.tokenizationData.token to your
+      // gateway from a backend.
+      // Do not log or store payment credentials in this demo.
     })
     // If there is an error, log it to the console.
     .catch(console.error);
